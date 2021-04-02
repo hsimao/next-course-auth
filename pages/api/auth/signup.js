@@ -19,27 +19,35 @@ const validateSignupData = ({ email, password }) => {
   }
 };
 
+const validateUserIsExisting = async (db, email) => {
+  const existingUser = await db.collection('users').findOne({ email });
+  if (existingUser) {
+    throw new Error('User exists already!');
+  }
+};
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') return;
+  const client = await connectToDatabase();
+  const db = client.db();
 
   try {
     const { email, password } = req.body;
 
     validateSignupData({ email, password });
-
-    const client = await connectToDatabase();
-    const db = client.db();
+    await validateUserIsExisting(db, email);
 
     const hashedPassword = await hashPassword(password);
-
-    const result = await db.collection('users').insertOne({
+    await db.collection('users').insertOne({
       email,
       password: hashedPassword,
     });
 
-    res.status(201).json({ message: 'Created user!', user: result });
+    res.status(201).json({ message: 'Created user!' });
   } catch (err) {
     console.log(err.message);
     res.status(422).json({ message: err.message });
+  } finally {
+    client.close();
   }
 }
