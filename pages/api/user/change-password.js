@@ -16,8 +16,8 @@ async function handler(req, res) {
   }
 
   const userEmail = session.user.email;
-  const oldPassword = session.user.oldPassword;
-  const newPassword = session.user.newPassword;
+  const oldPassword = req.body.oldPassword;
+  const newPassword = req.body.newPassword;
 
   const client = await connectToDatabase();
   const usersCollection = client.db().collection('users');
@@ -42,7 +42,7 @@ async function handler(req, res) {
 
   const hashedPassword = await hashPassword(newPassword);
 
-  const result = await userCollection.updateOne(
+  const result = await usersCollection.updateOne(
     { email: userEmail },
     { $set: { password: hashedPassword } }
   );
